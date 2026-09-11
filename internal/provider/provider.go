@@ -18,7 +18,6 @@ var DefaultClientScopes = []string{
 	"https://www.googleapis.com/auth/gmail.settings.basic",
 	"https://www.googleapis.com/auth/gmail.settings.sharing",
 	"https://www.googleapis.com/auth/chrome.management.policy",
-	"https://www.googleapis.com/auth/cloud-platform",
 	"https://www.googleapis.com/auth/cloud-identity.groups",
 	"https://www.googleapis.com/auth/admin.directory.customer",
 	"https://www.googleapis.com/auth/admin.directory.domain",
@@ -51,6 +50,7 @@ func New(version string) func() *schema.Provider {
 		p := &schema.Provider{
 			Schema: map[string]*schema.Schema{
 				"access_token": {
+					Sensitive: true,
 					Description: "A temporary [OAuth 2.0 access token] obtained from " +
 						"the Google Authorization server, i.e. the `Authorization: Bearer` token used to " +
 						"authenticate HTTP requests to Google Admin SDK APIs. This is an alternative to `credentials`, " +
@@ -64,6 +64,7 @@ func New(version string) func() *schema.Provider {
 				},
 
 				"credentials": {
+					Sensitive: true,
 					Description: "Either the path to or the contents of a service account key file in JSON format " +
 						"you can manage key files using the Cloud Console).  If not provided, the application default " +
 						"credentials will be used.",
@@ -229,11 +230,21 @@ func validateCredentials(v interface{}, p cty.Path) diag.Diagnostics {
 		return diags
 	}
 	if _, err := googleoauth.CredentialsFromJSON(context.Background(), []byte(creds)); err != nil {
-		diags = append(diags, diag.Diagnostic{
+		// Never echo the credentials value back: in its inline form it holds the
+		// service account's private_key. The wrapped error is safe to include --
+		// oauth2/google reports at most the "type" field or a parse position.
+		d := diag.Diagnostic{
 			Severity:      diag.Error,
-			Summary:       fmt.Sprintf("JSON credentials in %q are not valid: %s", creds, err),
+			Summary:       "credentials are not valid",
 			AttributePath: p,
-		})
+		}
+		if strings.HasPrefix(strings.TrimSpace(creds), "{") {
+			d.Detail = fmt.Sprintf("The value is not a valid service account key in JSON format: %s. "+
+				"The value itself is omitted here because it contains a private key.", err)
+		} else {
+			d.Detail = fmt.Sprintf("%q is neither a readable file nor valid service account key JSON: %s.", path, err)
+		}
+		diags = append(diags, d)
 	}
 
 	return diags

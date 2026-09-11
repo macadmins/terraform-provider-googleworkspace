@@ -135,8 +135,8 @@ resource "googleworkspace_user" "dwight" {
 - `password` (String, Sensitive) Stores the password for the user account. A password can contain any combination of ASCII characters. A minimum of 8 characters is required. The maximum length is 100 characters. As the API does not return the value of password, this field is write-only, and the value stored in the state will be what is provided in the configuration. The field is required on create and will be empty on import.
 - `phones` (Block List) A list of the user's phone numbers. The maximum allowed data size is 1Kb. (see [below for nested schema](#nestedblock--phones))
 - `posix_accounts` (Block List) A list of POSIX account information for the user. (see [below for nested schema](#nestedblock--posix_accounts))
-- `recovery_email` (String) Recovery email of the user.
-- `recovery_phone` (String) Recovery phone of the user. The phone number must be in the E.164 format, starting with the plus sign (+). Example: +16506661212.
+- `recovery_email` (String, Sensitive) Recovery email of the user.
+- `recovery_phone` (String, Sensitive) Recovery phone of the user. The phone number must be in the E.164 format, starting with the plus sign (+). Example: +16506661212.
 - `relations` (Block List) A list of the user's relationships to other users. The maximum allowed data size for this field is 2Kb. (see [below for nested schema](#nestedblock--relations))
 - `ssh_public_keys` (Block List) A list of SSH public keys. The maximum allowed data size is 10Kb. (see [below for nested schema](#nestedblock--ssh_public_keys))
 - `suspended` (Boolean) Indicates if user is suspended.

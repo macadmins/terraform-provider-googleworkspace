@@ -73,6 +73,8 @@ More information about scopes is below.
 
 The provider can be configured with an `oauth_scopes` field containing a list of requested scopes. If `oauth_scopes` is _not_ set in the provider configuration, the provider will fall back to a default list of scopes, which are all the scopes needed to manage resources that can be provisioned by the provider ([see default scopes for v0.6.0 here](https://github.com/hashicorp/terraform-provider-googleworkspace/blob/v0.6.0/internal/provider/provider.go#L17-L30)). If default scopes are used, the service account needs to be granted all of those scopes in Google Workspace.
 
+~>As of v1.4.0 the default list no longer requests `https://www.googleapis.com/auth/cloud-platform`. Every API this provider calls is covered by a narrower scope in the default list, so the broad full-GCP-surface scope is not needed and no longer has to be authorized for domain-wide delegation.
+
 The scopes declared in the provider's configuration need to match, or be a subset of, the scopes granted to the service account. If a provider is configured with scopes the service account isn't granted to use, the provider will receive a `401 Unauthorized` response when it requests an access token.
 
 ->It's recommended to include `oath_scopes` in your provider configuration to make the requested scopes explicit and easier to debug issues.
@@ -115,8 +117,8 @@ You can also provide an exported service account key in the `credentials` parame
 
 ### Optional
 
-- `access_token` (String) A temporary [OAuth 2.0 access token] obtained from the Google Authorization server, i.e. the `Authorization: Bearer` token used to authenticate HTTP requests to Google Admin SDK APIs. This is an alternative to `credentials`, and ignores the `oauth_scopes` field. If both are specified, `access_token` will be used over the `credentials` field.
-- `credentials` (String) Either the path to or the contents of a service account key file in JSON format you can manage key files using the Cloud Console).  If not provided, the application default credentials will be used.
+- `access_token` (String, Sensitive) A temporary [OAuth 2.0 access token] obtained from the Google Authorization server, i.e. the `Authorization: Bearer` token used to authenticate HTTP requests to Google Admin SDK APIs. This is an alternative to `credentials`, and ignores the `oauth_scopes` field. If both are specified, `access_token` will be used over the `credentials` field.
+- `credentials` (String, Sensitive) Either the path to or the contents of a service account key file in JSON format you can manage key files using the Cloud Console).  If not provided, the application default credentials will be used.
 - `customer_id` (String) The customer id provided with your Google Workspace subscription. It is found in the admin console under Account Settings.
 - `impersonated_user_email` (String) The impersonated user's email with access to the Admin APIs can access the Admin SDK Directory API. `impersonated_user_email` is required for all services except group and user management.
 - `oauth_scopes` (List of String) The list of the scopes required for your application (for a list of possible scopes, see [Authorize requests](https://developers.google.com/admin-sdk/directory/v1/guides/authorizing))

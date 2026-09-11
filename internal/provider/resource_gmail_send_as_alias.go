@@ -97,6 +97,7 @@ func resourceGmailSendAsAlias() *schema.Resource {
 							Description:  "The username that will be used for authentication with the SMTP service. This is a write-only field that can be specified in requests to create or update SendAs settings; it is never populated in responses.",
 							Type:         schema.TypeString,
 							Optional:     true,
+							Sensitive:    true,
 							RequiredWith: []string{"smtp_msa.0.password"},
 						},
 						"password": {

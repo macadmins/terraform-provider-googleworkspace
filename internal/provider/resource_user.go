@@ -990,12 +990,14 @@ func resourceUser() *schema.Resource {
 				Description: "Recovery email of the user.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Sensitive:   true,
 			},
 			"recovery_phone": {
 				Description: "Recovery phone of the user. The phone number must be in the E.164 format, " +
 					"starting with the plus sign (+). Example: +16506661212.",
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
 			},
 		},
 	}

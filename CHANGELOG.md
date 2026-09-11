@@ -1,4 +1,20 @@
-## 1.4.0 (Unreleased)
+## 1.4.0 (September 11, 2026)
+
+SECURITY
+
+* `logging_transport`: DEBUG-level HTTP logs now redact sensitive values at any nesting depth. Previously only a top-level `accessToken` key was masked, so `smtpMsa.password` on `googleworkspace_gmail_send_as_alias` requests and the top-level `password` on `googleworkspace_user` requests were written to the log in plaintext. Masked keys are now `accessToken`/`access_token`, `refresh_token`, `id_token`, `client_secret`, `private_key`, and `password`, matched case- and separator-insensitively, and the walk recurses through nested objects and arrays.
+
+* provider: `credentials` validation no longer echoes the supplied value into the error message. Because the field accepts either a path or inline JSON, a validation failure on the inline form previously printed the entire service account key, including `private_key`. A missing path is still named in the diagnostic, since a path is not secret and naming it is what makes a typo diagnosable.
+
+* provider: `access_token` and `credentials` are marked sensitive, so they are redacted in plan output rather than rendered in the clear.
+
+BREAKING CHANGES
+
+* provider: `https://www.googleapis.com/auth/cloud-platform` has been removed from the default `oauth_scopes`. Every API the provider calls is already covered by a narrower scope in the same list, so no functionality changes. Configurations that set `oauth_scopes` explicitly are unaffected; those relying on the defaults may remove the scope from the service account's domain-wide delegation grant.
+
+* `googleworkspace_user`: `recovery_email` and `recovery_phone` are now marked sensitive. A bare `output { value = googleworkspace_user.x.recovery_email }` will now need `sensitive = true`. The `googleworkspace_user` and `googleworkspace_users` data sources are unaffected.
+
+* `googleworkspace_gmail_send_as_alias`: `smtp_msa.username` is now marked sensitive, matching `smtp_msa.password`.
 
 FEATURES
 
