@@ -1,3 +1,29 @@
+## 1.5.0 (Unreleased)
+
+MIGRATION
+
+* The provider is now published as **`macadmins/googleworkspace`** from [macadmins/terraform-provider-googleworkspace](https://github.com/macadmins/terraform-provider-googleworkspace). The `vdesouza/googleworkspace` namespace is frozen at 1.4.0 and will receive no further releases. There are no provider code changes between 1.4.0 and 1.5.0; this release exists to establish the new registry address.
+
+  To move existing configurations, change `source` in `required_providers`, point state at the new address, and re-initialize:
+
+      terraform state replace-provider registry.terraform.io/vdesouza/googleworkspace registry.terraform.io/macadmins/googleworkspace
+      terraform init -upgrade
+
+* Companion modules under `modules/` now declare `source = "macadmins/googleworkspace"` with `version = ">= 1.5.0"`, and their documented Git sources are:
+
+      source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/<name>?ref=v1.5.0"
+
+  Consumers of the modules must run the `terraform state replace-provider` command above once before applying with the new module ref.
+
+* Releases are signed with a new GPG key owned by the macadmins organization, registered under the `macadmins` namespace on the Terraform Registry.
+
+CHANGES
+
+* `-debug` mode now attaches under `registry.terraform.io/macadmins/googleworkspace`.
+* Release archives include `LICENSE.txt`, and releases publish `terraform-provider-googleworkspace_<version>_manifest.json` alongside the checksums.
+* CI: unit tests run on the Go version declared in `go.mod` (previously pinned to a stale 1.17.9, which could not build the module).
+* Removed HashiCorp-internal acceptance-test infrastructure (`.github/infra`, `.github/vault`) and HashiCorp community documents inherited from upstream; `CONTRIBUTING.md` and the issue template are rewritten for this repository.
+
 ## 1.4.0 (September 11, 2026)
 
 SECURITY

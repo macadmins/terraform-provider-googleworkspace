@@ -33,9 +33,16 @@ builds:
 archives:
   - format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      # only the binary and the license belong in a provider archive
+      - src: LICENSE
+        dst: LICENSE.txt
 checksum:
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
 signs:
   - artifacts: checksum
     args:
@@ -50,5 +57,8 @@ signs:
       - "${artifact}"
 release:
   draft: false
+  extra_files:
+    - glob: terraform-registry-manifest.json
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
 changelog:
   disable: true

@@ -44,7 +44,7 @@ For regular user policies (`chrome.users.*` like IncognitoMode, Wallpaper, etc.)
 
 ```hcl
 module "group_priority" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/group_priority"
   groups_map       = module.groups.all_groups
@@ -58,7 +58,7 @@ For app-specific policies (`chrome.users.apps.*`), you must also provide `org_un
 
 ```hcl
 module "group_priority" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/group_priority"
   groups_map       = module.groups.all_groups
@@ -72,20 +72,20 @@ module "group_priority" {
 
 ```hcl
 module "groups" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/groups?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/groups?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/groups"
 }
 
 module "assets" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/assets?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/assets?ref=v1.5.0"
 
   yaml_config_path   = "${path.module}/config/assets"
   assets_source_path = "${path.module}/config/assets"
 }
 
 module "policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
 
   yaml_config_paths = ["${path.module}/config/policies"]
   groups_map        = module.groups.all_groups
@@ -93,14 +93,14 @@ module "policies" {
 }
 
 module "extensions" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/extensions?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/extensions?ref=v1.5.0"
 
   yaml_config_paths = ["${path.module}/config/extensions"]
   groups_map        = module.groups.all_groups
 }
 
 module "group_priority" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/group_priority?ref=v1.5.0"
 
   yaml_config_path                      = "${path.module}/config/group_priority"
   groups_map                            = module.groups.all_groups
@@ -401,4 +401,4 @@ config/group_priority/
 
 - [Chrome Policy Group Priority Ordering API](https://developers.google.com/chrome/policy/reference/rest/v1/customers.policies.groups/updateGroupPriorityOrdering)
 - [Understanding Policy Precedence](https://support.google.com/chrome/a/answer/9037717)
-- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/vdesouza/googleworkspace)
+- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/macadmins/googleworkspace)

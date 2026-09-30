@@ -5,7 +5,7 @@ Runnable examples for the companion modules under [`/modules`](../../modules/). 
 These examples use a **local source path** (`source = "../../../modules/<name>"`) so they can be `terraform init`-ed and validated without fetching from GitHub. Real consumers should use the Git source documented in each module's README:
 
 ```hcl
-source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/<name>?ref=v1.4.0"
+source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/<name>?ref=v1.5.0"
 ```
 
 ## Examples

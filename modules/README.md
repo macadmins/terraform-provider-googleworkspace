@@ -1,12 +1,12 @@
 # Companion Modules
 
-These Terraform modules ship from the [`terraform-provider-googleworkspace`](https://github.com/vdesouza/terraform-provider-googleworkspace) repository as a higher-level, YAML-driven layer on top of the provider. They turn declarative YAML configuration into Google Workspace groups, Chrome policies, Chrome extensions, and policy ordering resources.
+These Terraform modules ship from the [`terraform-provider-googleworkspace`](https://github.com/macadmins/terraform-provider-googleworkspace) repository as a higher-level, YAML-driven layer on top of the provider. They turn declarative YAML configuration into Google Workspace groups, Chrome policies, Chrome extensions, and policy ordering resources.
 
 The modules are not published to the Terraform Module Registry. They are consumed via a Git source pinned to a provider release tag:
 
 ```hcl
 module "chrome_policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
   # ...
 }
 ```
@@ -35,7 +35,7 @@ Use the same `?ref=` tag across all modules in a single configuration so their s
 
 1. Authenticate the provider in your root module (see the top-level README).
 2. Pick the modules you need from the table above. Most users will start with `variables` + `groups` + `policies`.
-3. Drop the `module "x" { source = "git::...//modules/<name>?ref=v1.4.0" }` blocks into your root config and wire outputs through inputs as the dependency graph shows.
+3. Drop the `module "x" { source = "git::...//modules/<name>?ref=v1.5.0" }` blocks into your root config and wire outputs through inputs as the dependency graph shows.
 4. Author YAML configuration files matching each module's `YAML_SCHEMA.md`.
 5. `terraform init && terraform plan`.
 

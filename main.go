@@ -37,7 +37,7 @@ func main() {
 	opts := &plugin.ServeOpts{ProviderFunc: googleworkspace.New(version)}
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/hashicorp/googleworkspace", opts)
+		err := plugin.Debug(context.Background(), "registry.terraform.io/macadmins/googleworkspace", opts)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

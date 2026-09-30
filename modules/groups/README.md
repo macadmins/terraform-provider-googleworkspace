@@ -18,7 +18,7 @@ This module manages Google Workspace groups from YAML configuration files. It su
 
 ```hcl
 module "groups" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/groups?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/groups?ref=v1.5.0"
   
   yaml_config_path = "${path.module}/config/groups"
 }
@@ -80,7 +80,7 @@ The module provides the following outputs:
 
 ```hcl
 module "groups" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/groups?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/groups?ref=v1.5.0"
   yaml_config_path = "${path.module}/config/groups"
 }
 
@@ -98,4 +98,4 @@ See `config/groups/example_groups.yaml` for comprehensive examples.
 ## References
 
 - [Google Workspace Dynamic Groups Query Language](https://cloud.google.com/identity/docs/how-to/test-query-dynamic-groups)
-- [Terraform Provider Documentation](https://github.com/vdesouza/terraform-provider-googleworkspace)
+- [Terraform Provider Documentation](https://github.com/macadmins/terraform-provider-googleworkspace)

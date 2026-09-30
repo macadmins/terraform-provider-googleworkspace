@@ -3,8 +3,8 @@ terraform {
 
   required_providers {
     googleworkspace = {
-      source  = "vdesouza/googleworkspace"
-      version = ">= 1.3.13"
+      source  = "macadmins/googleworkspace"
+      version = ">= 1.5.0"
     }
   }
 }

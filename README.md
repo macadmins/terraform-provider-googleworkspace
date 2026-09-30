@@ -1,34 +1,58 @@
-# Terraform Provider Google Workspace (Fork)
+# Terraform Provider Google Workspace
 
-Community-maintained Terraform provider for Google Workspace resources.
+[![Registry](https://img.shields.io/badge/registry-macadmins%2Fgoogleworkspace-623CE4)](https://registry.terraform.io/providers/macadmins/googleworkspace)
+[![Release](https://img.shields.io/github/v/release/macadmins/terraform-provider-googleworkspace)](https://github.com/macadmins/terraform-provider-googleworkspace/releases)
+[![License](https://img.shields.io/github/license/macadmins/terraform-provider-googleworkspace)](LICENSE)
 
-This fork is under active development.
+Community-maintained Terraform provider for Google Workspace: users, groups (static and dynamic), org units, domains, roles, custom schemas, Gmail send-as aliases, and Chrome policy.
+
+Maintained under the [Mac Admins Open Source](https://github.com/macadmins) organization. It continues the [HashiCorp provider](https://github.com/hashicorp/terraform-provider-googleworkspace) (archived upstream) by way of the [`vdesouza`](https://github.com/vdesouza/terraform-provider-googleworkspace) fork, whose full history and release line (1.0.0 to 1.4.0) live in this repository.
+
+## Using the provider
+
+```hcl
+terraform {
+  required_providers {
+    googleworkspace = {
+      source  = "macadmins/googleworkspace"
+      version = ">= 1.5.0"
+    }
+  }
+}
+
+provider "googleworkspace" {
+  credentials             = "/path/to/service-account-key.json"
+  customer_id             = "A01b123xz"
+  impersonated_user_email = "admin@example.com"
+}
+```
+
+Full provider documentation, including authentication and OAuth scope setup, is on the [Terraform Registry](https://registry.terraform.io/providers/macadmins/googleworkspace/latest/docs).
+
+### Migrating from `vdesouza/googleworkspace` or `hashicorp/googleworkspace`
+
+The provider binary is unchanged; only its registry address moved. Update `source` in `required_providers`, then point existing state at the new address:
+
+```sh
+terraform state replace-provider registry.terraform.io/vdesouza/googleworkspace registry.terraform.io/macadmins/googleworkspace
+# or, from the archived upstream:
+terraform state replace-provider registry.terraform.io/hashicorp/googleworkspace registry.terraform.io/macadmins/googleworkspace
+
+terraform init -upgrade
+```
+
+Note `hashicorp/googleworkspace` stopped at 0.7.0; review [CHANGELOG.md](CHANGELOG.md) for the changes between 0.7.0 and the current release before upgrading from it.
 
 ## Project Status
 
-This repository is a fork of the original provider and is currently a work in progress.
+Actively maintained. The most exercised areas are Dynamic Groups, Chrome Policy resources, and the companion modules below. Other resources were inherited from upstream and have had less recent attention; test changes in a non-production Google Workspace tenant first.
 
-Important expectations:
-- The most actively maintained areas right now are Dynamic Groups and Chrome Policy resources.
-- Other resources were inherited from the original project and have not yet been fully re-validated in this fork.
-- Use with care in production and test changes in a non-production Google Workspace tenant first.
-
-## Recent Focus In This Fork
-
-Recent development in this fork has focused on:
-- Dynamic group behavior and creation/update reliability.
-- Chrome Policy resources.
-- Group and Org Unit policy lifecycle behavior.
-- Additional target key handling.
-- Retry and non-fatal error handling for API edge cases.
-- Policy ordering and related Chrome policy workflow improvements.
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed release-by-release notes.
+See [CHANGELOG.md](CHANGELOG.md) for release-by-release notes.
 
 ## Requirements
 
 - Terraform >= 1.4
-- Go >= 1.24 (for development/building this fork)
+- Go >= 1.24 (for development)
 - Access to a Google Workspace environment
 
 ## Build
@@ -40,13 +64,8 @@ make build
 ## Test
 
 ```sh
-make test
-```
-
-Tests (require Google Workspace credentials/env vars):
-
-```sh
-make testacc
+make test      # unit tests
+make testacc   # acceptance tests; require Google Workspace credentials and env vars
 ```
 
 ## Generate Documentation
@@ -55,18 +74,15 @@ make testacc
 make generate
 ```
 
-Notes:
-
-- Files under docs/ are generated output.
-- Update source schemas/examples, then run make generate.
+Files under `docs/` are generated. Edit resource schemas and `examples/`, then run `make generate`.
 
 ## Companion Modules
 
-This repository also ships a set of YAML-driven Terraform modules that compose provider resources into higher-level workflows for Chrome management. They live under [`modules/`](modules/) and can be consumed via a Git source pinned to a release tag:
+This repository also ships YAML-driven Terraform modules that compose provider resources into higher-level Chrome management workflows. They live under [`modules/`](modules/) and are consumed via a Git source pinned to a release tag:
 
 ```hcl
 module "chrome_policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
   # ...
 }
 ```
@@ -77,19 +93,19 @@ module "chrome_policies" {
 | [`groups`](modules/groups/) | Static and dynamic Google Workspace groups from YAML. |
 | [`assets`](modules/assets/) | File uploads to Chrome Policy storage (wallpapers, avatars, ToS). |
 | [`policies`](modules/policies/) | Chrome policies for groups and OUs, with asset reference resolution. |
-| [`extensions`](modules/extensions/) | A variation on `policies` for managing Chrome extensions, Android apps, and web apps deployed to groups or OUs. |
+| [`extensions`](modules/extensions/) | A variation on `policies` for Chrome extensions, Android apps, and web apps deployed to groups or OUs. |
 | [`group_priority`](modules/group_priority/) | Resolves ordering when multiple groups assign overlapping policies/extensions. |
 
 See [`modules/README.md`](modules/README.md) for the dependency graph and reference configurations.
 
+## Releasing
+
+Releases are cut by pushing a `v*` tag. GitHub Actions runs GoReleaser, signs the checksums with the organization's GPG key, and publishes a GitHub Release, which the Terraform Registry ingests automatically.
+
 ## Contributing
 
-Contributions and bug reports are welcome.
+Contributions and bug reports are welcome; see [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
-When opening issues, please include:
+## License
 
-- Terraform version
-- Provider version
-- Resource/data source used
-- Relevant config snippet (sanitized)
-- Full error output
+[Mozilla Public License 2.0](LICENSE).

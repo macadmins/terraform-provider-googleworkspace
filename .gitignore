@@ -38,4 +38,6 @@ website/vendor
 # Ignore built binary
 terraform-provider-googleworkspace
 
-CLAUDE.md.claude/
+# local AI-tooling state (not part of the provider)
+.claude/
+.grove/

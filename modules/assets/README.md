@@ -21,7 +21,7 @@ The module reads YAML configuration files that define assets to be uploaded. It 
 
 ```hcl
 module "assets" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/assets?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/assets?ref=v1.5.0"
 
   yaml_config_path   = "${path.module}/config/assets"
   assets_source_path = "${path.module}/config/assets"
@@ -32,14 +32,14 @@ module "assets" {
 
 ```hcl
 module "assets" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/assets?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/assets?ref=v1.5.0"
 
   yaml_config_path   = "${path.module}/config/assets"
   assets_source_path = "${path.module}/config/assets"
 }
 
 module "policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/policies"
   assets_map       = module.assets.assets_map
@@ -203,4 +203,4 @@ config/assets/
 
 - [Chrome Policy Media Upload API](https://developers.google.com/chrome/policy/reference/rest/v1/media/upload)
 - [Chrome Policy Schema Reference](https://developers.google.com/chrome/policy/guides/policy-schemas)
-- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/vdesouza/googleworkspace)
+- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/macadmins/googleworkspace)

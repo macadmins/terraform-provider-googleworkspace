@@ -21,7 +21,7 @@ The module reads YAML configuration files that define Chrome policies to be appl
 
 ```hcl
 module "policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/policies"
 }
@@ -31,13 +31,13 @@ module "policies" {
 
 ```hcl
 module "groups" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/groups?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/groups?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/groups"
 }
 
 module "policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/policies"
   groups_map       = module.groups.all_groups
@@ -48,20 +48,20 @@ module "policies" {
 
 ```hcl
 module "groups" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/groups?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/groups?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/groups"
 }
 
 module "assets" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/assets?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/assets?ref=v1.5.0"
 
   yaml_config_path   = "${path.module}/config/assets"
   assets_source_path = "${path.module}/config/assets"
 }
 
 module "policies" {
-  source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/policies?ref=v1.4.0"
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
 
   yaml_config_path = "${path.module}/config/policies"
   groups_map       = module.groups.all_groups
@@ -185,7 +185,7 @@ Use `additional_target_keys` to add extra targeting parameters beyond the group/
 When adopting existing Chrome policies that are already configured in Google Admin, add `import: true` to bring them into Terraform state without re-creating them.
 
 **Requirements:**
-- Provider `vdesouza/googleworkspace` with import support
+- Provider `macadmins/googleworkspace` with import support
 - Terraform >= 1.7 (for `import` blocks with `for_each`)
 
 **Workflow:**
@@ -266,4 +266,4 @@ See `config/policies/example_policies.yaml` for more examples including:
 
 - [Chrome Policy List](https://chromeenterprise.google/policies/)
 - [Chrome Management API](https://developers.google.com/chrome/management)
-- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/vdesouza/googleworkspace)
+- [Terraform Google Workspace Provider](https://registry.terraform.io/providers/macadmins/googleworkspace)
