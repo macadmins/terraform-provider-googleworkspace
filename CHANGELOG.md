@@ -21,6 +21,7 @@ CHANGES
 
 * `-debug` mode now attaches under `registry.terraform.io/macadmins/googleworkspace`.
 * Release archives include `LICENSE.txt`, and releases publish `terraform-provider-googleworkspace_<version>_manifest.json` alongside the checksums.
+* Releases are started by running the `release` workflow from `main` with a version input, gated by the `release` environment; the workflow creates the tag. Tags pushed by hand no longer trigger a build.
 * CI: unit tests run on the Go version declared in `go.mod` (previously pinned to a stale 1.17.9, which could not build the module).
 * Removed HashiCorp-internal acceptance-test infrastructure (`.github/infra`, `.github/vault`) and HashiCorp community documents inherited from upstream; `CONTRIBUTING.md` and the issue template are rewritten for this repository.
 
