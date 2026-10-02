@@ -1,6 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
 resource "googleworkspace_org_unit" "example" {
   name                 = "example"
   parent_org_unit_path = "/"

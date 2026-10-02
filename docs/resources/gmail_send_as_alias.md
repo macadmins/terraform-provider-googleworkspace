@@ -69,7 +69,7 @@ Optional:
 
 - `password` (String, Sensitive) The password that will be used for authentication with the SMTP service. This is a write-only field that can be specified in requests to create or update SendAs settings; it is never populated in responses.
 - `security_mode` (String) Defaults to `securityModeUnspecified`. The protocol that will be used to secure communication with the SMTP service.
-- `username` (String) The username that will be used for authentication with the SMTP service. This is a write-only field that can be specified in requests to create or update SendAs settings; it is never populated in responses.
+- `username` (String, Sensitive) The username that will be used for authentication with the SMTP service. This is a write-only field that can be specified in requests to create or update SendAs settings; it is never populated in responses.
 
 ## Import
 

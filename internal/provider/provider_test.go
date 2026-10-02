@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -75,7 +72,7 @@ func googleworkspaceTestClient() (*apiClient, error) {
 	diags := client.loadAndValidate(context.Background())
 	if diags.HasError() {
 		log.Printf("[INFO][SWEEPER_LOG] error loading: %s", diags[0].Summary)
-		return nil, fmt.Errorf(diags[0].Summary)
+		return nil, fmt.Errorf("%s", diags[0].Summary)
 	}
 
 	return client, nil

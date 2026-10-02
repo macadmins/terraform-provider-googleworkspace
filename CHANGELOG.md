@@ -1,4 +1,333 @@
-## 0.8.0 (Unreleased)
+## 1.5.0 (Unreleased)
+
+MIGRATION
+
+* The provider is now published as **`macadmins/googleworkspace`** from [macadmins/terraform-provider-googleworkspace](https://github.com/macadmins/terraform-provider-googleworkspace). The `vdesouza/googleworkspace` namespace is frozen at 1.4.0 and will receive no further releases. There are no provider code changes between 1.4.0 and 1.5.0; this release exists to establish the new registry address.
+
+  To move existing configurations, change `source` in `required_providers`, point state at the new address, and re-initialize:
+
+      terraform state replace-provider registry.terraform.io/vdesouza/googleworkspace registry.terraform.io/macadmins/googleworkspace
+      terraform init -upgrade
+
+* Companion modules under `modules/` now declare `source = "macadmins/googleworkspace"` with `version = ">= 1.5.0"`, and their documented Git sources are:
+
+      source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/<name>?ref=v1.5.0"
+
+  Consumers of the modules must run the `terraform state replace-provider` command above once before applying with the new module ref.
+
+* Releases are signed with a new GPG key owned by the macadmins organization, registered under the `macadmins` namespace on the Terraform Registry.
+
+CHANGES
+
+* `-debug` mode now attaches under `registry.terraform.io/macadmins/googleworkspace`.
+* Release archives include `LICENSE.txt`, and releases publish `terraform-provider-googleworkspace_<version>_manifest.json` alongside the checksums.
+* CI: unit tests run on the Go version declared in `go.mod` (previously pinned to a stale 1.17.9, which could not build the module).
+* Removed HashiCorp-internal acceptance-test infrastructure (`.github/infra`, `.github/vault`) and HashiCorp community documents inherited from upstream; `CONTRIBUTING.md` and the issue template are rewritten for this repository.
+
+## 1.4.0 (September 11, 2026)
+
+SECURITY
+
+* `logging_transport`: DEBUG-level HTTP logs now redact sensitive values at any nesting depth. Previously only a top-level `accessToken` key was masked, so `smtpMsa.password` on `googleworkspace_gmail_send_as_alias` requests and the top-level `password` on `googleworkspace_user` requests were written to the log in plaintext. Masked keys are now `accessToken`/`access_token`, `refresh_token`, `id_token`, `client_secret`, `private_key`, and `password`, matched case- and separator-insensitively, and the walk recurses through nested objects and arrays.
+
+* provider: `credentials` validation no longer echoes the supplied value into the error message. Because the field accepts either a path or inline JSON, a validation failure on the inline form previously printed the entire service account key, including `private_key`. A missing path is still named in the diagnostic, since a path is not secret and naming it is what makes a typo diagnosable.
+
+* provider: `access_token` and `credentials` are marked sensitive, so they are redacted in plan output rather than rendered in the clear.
+
+BREAKING CHANGES
+
+* provider: `https://www.googleapis.com/auth/cloud-platform` has been removed from the default `oauth_scopes`. Every API the provider calls is already covered by a narrower scope in the same list, so no functionality changes. Configurations that set `oauth_scopes` explicitly are unaffected; those relying on the defaults may remove the scope from the service account's domain-wide delegation grant.
+
+* `googleworkspace_user`: `recovery_email` and `recovery_phone` are now marked sensitive. A bare `output { value = googleworkspace_user.x.recovery_email }` will now need `sensitive = true`. The `googleworkspace_user` and `googleworkspace_users` data sources are unaffected.
+
+* `googleworkspace_gmail_send_as_alias`: `smtp_msa.username` is now marked sensitive, matching `smtp_msa.password`.
+
+FEATURES
+
+* New: Companion Terraform modules for declarative Chrome management published from this repository under `modules/`. Six modules are included: `variables`, `groups`, `assets`, `extensions`, `policies`, and `group_priority`. They consume YAML configuration files and create the corresponding Google Workspace groups, org-unit policies, group policies, Chrome extensions/apps, and policy ordering resources. Modules are sourced via:
+
+      source = "git::https://github.com/vdesouza/terraform-provider-googleworkspace.git//modules/<name>?ref=v1.4.0"
+
+  See `modules/README.md` for the dependency graph and reference configurations.
+
+## 1.3.13 (March 06, 2026)
+
+BUG FIXES
+
+* `googleworkspace_chrome_policy`, `googleworkspace_chrome_group_policy`: Treat HTTP 400 "do not exist in Chrome Web Store and do not have a Url specified" as a non-fatal delete error. This occurs when deleting a policy or extension that references an app ID no longer valid in the Chrome Web Store. Since the app doesn't exist, the policy is already absent and the deletion is a no-op.
+
+## 1.3.12 (March 06, 2026)
+
+BUG FIXES
+
+* `googleworkspace_chrome_policy`: Fix HTTP 400 "BatchInheritOrgUnitPolicies request must contain at least one request" during OU policy **update**. When Terraform detects drift and triggers an update, the update function calls `BatchInherit` to clear old schema values before writing new ones. If the old state has no policies recorded (e.g., after drift detection returns 0 resolved policies), the requests slice is empty and the API rejects the call. The provider now skips the `BatchInherit` call when the requests list is empty in both the update and delete paths. Non-fatal 400 errors (including "apps are not installed", "Install Type can only be inherited", and "BatchInheritOrgUnitPolicies request must contain at least one request") are also now suppressed in the update path via `isNonFatalDeleteError`.
+
+## 1.3.10 (March 05, 2026)
+
+BUG FIXES
+
+* `googleworkspace_chrome_policy`: Fix HTTP 400 "BatchInheritOrgUnitPolicies request must contain at least one request" during OU policy deletion. This occurs when Terraform state has no policies recorded for the resource (e.g., after a failed import or partial apply). The provider now skips the `BatchInherit` call when the requests list is empty, treating the resource as already absent.
+
+## 1.3.9 (March 05, 2026)
+
+BUG FIXES
+
+* `googleworkspace_chrome_policy`, `googleworkspace_chrome_group_policy`: Fix 429 quota errors not being retried at the application level. `retryTimeDuration` previously only retried on eventual-consistency errors ("timed out while waiting"); it now delegates to `isRetryableError` which covers 429 rate-limit, 403 quota-exceeded, 5xx, and network errors. The retry window is also extended from 1 minute to 5 minutes to allow the transport-level Fibonacci backoff (up to 90 seconds per attempt) to complete without context cancellation.
+
+## 1.3.8 (March 05, 2026)
+
+BUG FIXES
+
+* `googleworkspace_chrome_policy`: Gracefully handle HTTP 400 "Install Type can only be inherited if it is configured in a parent Organizational Unit" during OU policy deletion. This error occurs when an extension is only configured on a child OU with no parent OU configuration — the Chrome Policy API has no `batchDelete` equivalent for OUs, and `batchInherit` rejects the call when there is nothing to inherit from. The error is non-fatal because it proves the policy is already absent from the parent scope.
+
+## 1.3.7 (March 04, 2026)
+
+FEATURES
+
+* `data.googleworkspace_chrome_policy_group_priority_ordering`: Add computed `exists` boolean attribute and handle HTTP 400 gracefully (returns empty `group_ids` and `exists=false` instead of failing).
+
+## 1.3.6 (March 04, 2026)
+
+BUG FIXES
+
+* Improve retry logic for the Chrome policy group ordering resource.
+
+## 1.3.5 (March 03, 2026)
+
+FEATURES
+
+* Add create-before-delete behavior.
+
+## 1.3.4 (February 19, 2026)
+
+BUG FIXES
+
+* Fix deletion behavior for ordering resources.
+
+## 1.3.3 (February 19, 2026)
+
+BUG FIXES
+
+* Same fix as 1.3.4: deletion behavior for ordering resources.
+
+## 1.3.2 (February 19, 2026)
+
+BUG FIXES
+
+* Fix import behavior.
+
+## 1.3.1 (February 19, 2026)
+
+BUG FIXES
+
+* Same fix as 1.3.2: import behavior.
+
+## 1.3.0 (February 19, 2026)
+
+FEATURES
+
+* Add import support.
+
+## 1.2.31 (February 19, 2026)
+
+BUG FIXES
+
+* Fix root path lookup.
+
+
+## 1.2.29 (December 18, 2025)
+
+BUG FIXES
+* Fix `policyTargetKey` usage for policy group ordering.
+
+## 1.2.28 (December 18, 2025)
+
+BUG FIXES
+* Same fix as 1.2.29: `policyTargetKey` usage for policy group ordering.
+
+## 1.2.27 (December 18, 2025)
+
+FEATURES
+* Add Chrome policy group ordering support.
+
+## 1.2.26 (October 20, 2025)
+
+BUG FIXES
+* Fix update state handling with `additional_target_keys`.
+  
+## 1.2.23 (October 20, 2025)
+
+BUG FIXES
+* Same fix as 1.2.26: update state handling with `additional_target_keys`.
+
+## 1.2.22 (October 20, 2025)
+
+BUG FIXES
+* Fix update state handling.
+
+## 1.2.21 (October 20, 2025)
+
+BUG FIXES
+* Fix state change detection.
+
+## 1.2.20 (October 20, 2025)
+
+BUG FIXES
+* Same fix as 1.2.21: state change detection.
+
+## 1.2.19 (October 17, 2025)
+
+IMPROVEMENTS
+* Slight refactor: removed shared Chrome policy common code (group and org unit API calls diverge) and cleaned up warnings.
+
+## 1.2.18 (October 17, 2025)
+
+BUG FIXES
+* Fix state change detection.
+
+## 1.2.17 (October 16, 2025)
+
+BUG FIXES
+* Fix dynamic group creation.
+
+## 1.2.16 (October 16, 2025)
+
+BUG FIXES
+* Same fix as 1.2.17: dynamic group creation.
+
+## 1.2.15 (October 16, 2025)
+
+BUG FIXES
+* Same fix as 1.2.17: dynamic group creation.
+
+
+## 1.2.14 (October 16, 2025)
+
+FEATURES
+* Add support for security groups via the `googleworkspace_group` resource; requires Cloud Identity API scope.
+
+## 1.2.13 (October 16, 2025)
+
+FEATURES
+* Same feature as 1.2.14: security groups via `googleworkspace_group` with Cloud Identity API scope.
+
+## 1.2.12 (October 16, 2025)
+
+FEATURES
+* Same feature as 1.2.14: security groups via `googleworkspace_group` with Cloud Identity API scope.
+
+## 1.2.11 (October 16, 2025)
+
+FEATURES
+* Same feature as 1.2.14: security groups via `googleworkspace_group` with Cloud Identity API scope.
+
+## 1.2.10 (October 16, 2025)
+
+FEATURES
+* Same feature as 1.2.14: security groups via `googleworkspace_group` with Cloud Identity API scope.
+
+## 1.2.9 (October 16, 2025)
+
+BUG FIXES:
+* Fix image type.
+
+## 1.2.8 (October 15, 2025)
+
+BUG FIXES:
+* Add debug logs.
+
+## 1.2.7 (October 15, 2025)
+
+BUG FIXES:
+* Same fix as 1.2.8: add debug logs.
+
+## 1.2.6 (October 15, 2025)
+
+BUG FIXES:
+* Same fix as 1.2.8: add debug logs.
+
+## 1.2.5 (October 15, 2025)
+
+BUG FIXES:
+* Fix asset file upload.
+
+## 1.2.4 (October 15, 2025)
+`
+FEATURES:
+* Add Chrome policy file resource for uploading files referenced by Chrome policies (for example, wallpapers).
+
+## 1.2.3 (October 15, 2025)
+
+BUG FIXES:
+* groups: fix dynamic group API call.
+
+## 1.2.2 (October 15, 2025)
+
+BUG FIXES:
+* Same fix as 1.2.3: groups dynamic group API call.
+
+## 1.2.1 (October 15, 2025)
+
+BUG FIXES:
+* Same fix as 1.2.3: groups dynamic group API call.
+`
+## 1.2.0 (October 14, 2025)
+
+FEATURES:
+* **New Resource**: `googleworkspace_group_dynamic` - Create and manage dynamic Google Workspace groups with query-based membership using the Cloud Identity API
+* **New Service**: Added Cloud Identity API support with `NewCloudIdentityService()` and `GetCloudIdentityGroupsService()` helper functions
+
+IMPROVEMENTS:
+* provider: Added `cloud-identity.groups` scope to default OAuth scopes for dynamic group support
+
+## 1.1.11 (October 13, 2025)
+
+BUG FIXES:
+* chrome: workaround batch update issues with Google's API
+
+## 1.1.10 (October 13, 2025)
+
+FEATURES:
+* support passing a group email to googleworkspace_chrome_group_policy
+
+## 1.1.9 (October 13, 2025)
+
+BUG FIXES:
+* chrome: workaround batch delete issues with Google's API
+
+## 1.1.8 (October 13, 2025)
+
+BUG FIXES:
+* chrome: fix group policy updates not deleting removed policies
+
+## 1.1.7 (October 13, 2025)
+
+BUG FIXES:
+* chrome: test
+
+## 1.1.6 (October 13, 2025)
+
+BUG FIXES:
+* chrome: fix handling multiple policies in one resource
+
+## 1.1.5 (October 13, 2025)
+
+BUG FIXES:
+* chrome: fix group based policy deletes
+
+## 1.1.4 (October 13, 2025)
+
+BUG FIXES:
+* chrome: fix group based policy updates
+
+## 1.1.3 (October 10, 2025)
+
+IMPROVEMENTS:
+* provider: updated Chrome Policy API and dependencies to latest versions
+
+BUG FIXES:
+* chrome: fixed a bug where when validating a `googleworkspace_chrome_policy` schema value the proto `LABEL_REPEATED` label was not being respected to require an array of the associated type ([#336](https://github.com/hashicorp/terraform-provider-googleworkspace/pull/336))
+
 ## 0.7.0 (June 10, 2022)
 
 FEATURES:

@@ -1,43 +1,33 @@
-Hi there,
+<!-- Please fill in the sections below. Sanitize customer IDs, emails, and credentials. -->
 
-Thank you for opening an issue. Please note that we try to keep the Terraform issue tracker reserved for bug reports and feature requests. For general usage questions, please see: https://www.terraform.io/community.html.
+### Terraform and provider versions
 
-### Terraform Version
-Run `terraform -v` to show the version. If you are not running the latest version of Terraform, please upgrade because your issue may have already been fixed.
-
-### Affected Resource(s)
-Please list the resources as a list, for example:
-- opc_instance
-- opc_storage_volume
-
-If this issue appears to affect multiple resources, it may be an issue with Terraform's core, so please mention this.
-
-### Terraform Configuration Files
-```hcl
-# Copy-paste your Terraform configurations here - for large Terraform configs,
-# please use a service like Dropbox and share a link to the ZIP file. For
-# security, you can also encrypt the files using our GPG public key.
+```
+terraform -v
 ```
 
-### Debug Output
-Please provider a link to a GitHub Gist containing the complete debug output: https://www.terraform.io/docs/internals/debugging.html. Please do NOT paste the debug output in the issue; just paste a link to the Gist.
+Provider version:
 
-### Panic Output
-If Terraform produced a panic, please provide a link to a GitHub Gist containing the output of the `crash.log`.
+### Affected resource(s) or data source(s)
 
-### Expected Behavior
-What should have happened?
+- `googleworkspace_...`
 
-### Actual Behavior
-What actually happened?
+### Configuration
 
-### Steps to Reproduce
-Please list the steps required to reproduce the issue, for example:
+```hcl
+# minimal configuration that reproduces the issue
+```
+
+### Expected behavior
+
+### Actual behavior
+
+### Steps to reproduce
+
 1. `terraform apply`
 
-### Important Factoids
-Are there anything atypical about your accounts that we should know? For example: Running in EC2 Classic? Custom version of OpenStack? Tight ACLs?
+### Debug output
 
-### References
-Are there any other GitHub issues (open or closed) or Pull Requests that should be linked here? For example:
-- GH-1234
+<!-- TF_LOG=DEBUG terraform apply, as a gist link. Tokens and passwords are redacted automatically; review before posting. -->
+
+### Additional context

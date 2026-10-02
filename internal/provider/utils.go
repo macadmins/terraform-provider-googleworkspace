@@ -1,11 +1,7 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/mail"
 	"os"
@@ -45,7 +41,7 @@ func pathOrContents(poc string) (string, bool, error) {
 	}
 
 	if _, err := os.Stat(path); err == nil {
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return string(contents), true, err
 		}
@@ -59,6 +55,40 @@ func pathOrContents(poc string) (string, bool, error) {
 func isApiErrorWithCode(err error, errCode int) bool {
 	gerr, ok := errwrap.GetType(err, &googleapi.Error{}).(*googleapi.Error)
 	return ok && gerr != nil && gerr.Code == errCode
+}
+
+// isNonFatalDeleteError returns true for 400 errors that can be safely ignored
+// when deleting OU-based Chrome policies via BatchInherit.
+//
+// The Chrome Policy API for OrgUnits only provides BatchModify (set values) and
+// BatchInherit (reset to parent). There is no BatchDelete equivalent for OUs —
+// BatchInherit is the only deletion mechanism.
+//
+// Three known non-fatal cases:
+//
+//  1. "apps are not installed": The app was uninstalled from the domain. The policy
+//     no longer applies and there is nothing to inherit.
+//
+//  2. "Install Type can only be inherited if it is configured in a parent
+//     Organizational Unit": The app was only configured on this specific OU and
+//     has no configuration on any ancestor OU. The API rejects the BatchInherit
+//     call because there is nothing to inherit from. This error proves the policy
+//     is already absent from the parent scope, so the deletion is effectively a
+//     no-op. A batchDelete equivalent for OUs does not exist in the API (see:
+//     https://developers.google.com/chrome/policy/reference/rest/v1/customers.policies.orgunits).
+//     This case has been reported to Google (support case pending).
+//
+//  3. "BatchInheritOrgUnitPolicies request must contain at least one request":
+//     The API rejects the call even when the requests slice is non-empty. This
+//     happens when the target OU no longer exists (e.g., was deleted outside
+//     Terraform) or the policy schema is no longer valid for that target. In both
+//     cases the policy is already absent, so the deletion is a no-op.
+func isNonFatalDeleteError(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "apps are not installed") ||
+		strings.Contains(msg, "Install Type can only be inherited") ||
+		strings.Contains(msg, "BatchInheritOrgUnitPolicies request must contain at least one request") ||
+		strings.Contains(msg, "do not exist in Chrome Web Store and do not have a Url specified")
 }
 
 func handleNotFoundError(err error, d *schema.ResourceData, resource string) diag.Diagnostics {
@@ -205,8 +235,5 @@ func sortListOfInterfaces(v []interface{}) []string {
 // isEmail returns a boolean indicating if the input string is parsable as an email
 func isEmail(input string) bool {
 	_, err := mail.ParseAddress(input)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }

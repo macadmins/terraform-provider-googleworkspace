@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -293,7 +290,7 @@ func testRetryTransport_checkBody(t *testing.T, resp *http.Response, expectedMsg
 
 	expectedBody := fmt.Sprintf("Request Body: %s", expectedMsg)
 	if !strings.HasSuffix(string(actualBody), expectedBody) {
-		t.Fatalf(expectedBody)
+		t.Fatalf("expected response body to have suffix %q, got: %q", expectedBody, string(actualBody))
 	}
 }
 

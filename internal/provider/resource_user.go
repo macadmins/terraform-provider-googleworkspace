@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -993,18 +990,20 @@ func resourceUser() *schema.Resource {
 				Description: "Recovery email of the user.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Sensitive:   true,
 			},
 			"recovery_phone": {
 				Description: "Recovery phone of the user. The phone number must be in the E.164 format, " +
 					"starting with the plus sign (+). Example: +16506661212.",
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:      schema.TypeString,
+				Optional:  true,
+				Sensitive: true,
 			},
 		},
 	}
 }
 
-func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	// use the meta value to retrieve your client from the provider configure method
@@ -1013,7 +1012,7 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	if d.Get("password").(string) == "" {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Password is required when creating a new user"),
+			Summary:  "Password is required when creating a new user",
 		})
 
 		return diags

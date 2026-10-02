@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -8,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"google.golang.org/api/googleapi"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"google.golang.org/api/googleapi"
 )
 
 const defaultRetryTransportTimeoutSec = 90
@@ -129,7 +127,7 @@ func (t *retryTransport) checkForRetryableError(resp *http.Response, respErr err
 			if err != nil {
 				return resource.NonRetryableError(fmt.Errorf("unable to check response for error: %v", err))
 			}
-			respToCheck.Body = ioutil.NopCloser(bytes.NewReader(dumpBytes))
+			respToCheck.Body = io.NopCloser(bytes.NewReader(dumpBytes))
 		}
 		errToCheck = googleapi.CheckResponse(&respToCheck)
 	}

@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -49,10 +46,7 @@ func dataSourceUsersRead(ctx context.Context, d *schema.ResourceData, meta inter
 
 	var result []*directory.User
 	err := usersService.List().Customer(client.Customer).Projection("full").Pages(ctx, func(resp *directory.Users) error {
-		for _, user := range resp.Users {
-			result = append(result, user)
-		}
-
+		result = append(result, resp.Users...)
 		return nil
 	})
 

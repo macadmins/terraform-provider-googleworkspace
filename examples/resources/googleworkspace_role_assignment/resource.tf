@@ -1,6 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
 resource "googleworkspace_user" "dwight" {
   primary_email = "dwight.schrute@example.com"
   password      = "34819d7beeabb9260a5c854bc85b3e44"

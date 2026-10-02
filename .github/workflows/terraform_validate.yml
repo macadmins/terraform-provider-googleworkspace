@@ -1,0 +1,92 @@
+name: Terraform module validation
+
+on:
+  push:
+    paths:
+      - 'modules/**'
+      - 'examples/modules/**'
+      - 'internal/**'
+      - 'main.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'GNUmakefile'
+      - '.github/workflows/terraform_validate.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'modules/**'
+      - 'examples/modules/**'
+      - 'internal/**'
+      - 'main.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'GNUmakefile'
+      - '.github/workflows/terraform_validate.yml'
+  schedule:
+    # Weekly run catches Terraform releases that change validation behavior
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform_version:
+          - '1.4.7'
+          - '1.7.5'
+          - 'latest'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ matrix.terraform_version }}
+
+      # The modules require macadmins/googleworkspace. Rather than pull a
+      # released build from the registry, validate them against the provider
+      # built from this very commit: lay the binary out as a filesystem mirror
+      # and tell Terraform never to consult the registry for this namespace.
+      # 99.0.0 is a sentinel that satisfies the modules' ">= x.y.z" constraints.
+      # This also lets validation run before the first release exists.
+      - name: Build provider from this commit into a filesystem mirror
+        run: |
+          set -euo pipefail
+          MIRROR="$RUNNER_TEMP/tfmirror"
+          PKG="$MIRROR/registry.terraform.io/macadmins/googleworkspace/99.0.0/linux_amd64"
+          mkdir -p "$PKG"
+          go build -o "$PKG/terraform-provider-googleworkspace_v99.0.0" .
+          cat > "$RUNNER_TEMP/tfmirror.tfrc" <<TFRC
+          provider_installation {
+            filesystem_mirror {
+              path    = "$MIRROR"
+              include = ["registry.terraform.io/macadmins/*"]
+            }
+            direct {
+              exclude = ["registry.terraform.io/macadmins/*"]
+            }
+          }
+          TFRC
+          echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/tfmirror.tfrc" >> "$GITHUB_ENV"
+          echo "TF_IN_AUTOMATION=1" >> "$GITHUB_ENV"
+
+      - name: Format check (modules + examples)
+        run: terraform fmt -recursive -check ./modules/ ./examples/
+
+      - name: Validate modules
+        run: make validate-modules
+
+      - name: Validate examples
+        run: make validate-examples

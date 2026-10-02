@@ -1,101 +1,111 @@
-
-<!-- archived-provider -->
->Please note: This Terraform provider is archived, per our [provider archiving process](https://terraform.io/docs/internals/archiving.html). What does this mean?
->1. The code repository and all commit history will still be available.
->1. Existing released binaries will remain available on the releases site.
->1. Issues and pull requests are not being monitored.
->1. New releases will not be published.
->
->If anyone from the community or an interested third party is willing to maintain it, they can fork the repository and [publish it](https://www.terraform.io/docs/registry/providers/publishing.html) to the Terraform Registry. If you are interested in maintaining this provider, please reach out to the [Terraform Provider Development Program](https://www.terraform.io/guides/terraform-provider-development-program.html) at *terraform-provider-dev@hashicorp.com*.
-
-
-
 # Terraform Provider Google Workspace
-<a href="https://terraform.io">
-    <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" alt="Terraform logo" align="right" height="50" />
-</a>
 
-![Status: Tech Preview](https://img.shields.io/badge/status-experimental-EAAA32) [![Releases](https://img.shields.io/github/release/hashicorp/terraform-provider-googleworkspace.svg)](https://github.com/hashicorp/terraform-provider-googleworkspace/releases)
-[![LICENSE](https://img.shields.io/github/license/hashicorp/terraform-provider-googleworkspace.svg)](https://github.com/hashicorp/terraform-provider-googleworkspace/blob/main/LICENSE)![Unit tests](https://github.com/hashicorp/terraform-provider-googleworkspace/workflows/Unit%20tests/badge.svg)
+[![Registry](https://img.shields.io/badge/registry-macadmins%2Fgoogleworkspace-623CE4)](https://registry.terraform.io/providers/macadmins/googleworkspace)
+[![Release](https://img.shields.io/github/v/release/macadmins/terraform-provider-googleworkspace)](https://github.com/macadmins/terraform-provider-googleworkspace/releases)
+[![License](https://img.shields.io/github/license/macadmins/terraform-provider-googleworkspace)](LICENSE)
 
-This Google Workspace provider for Terraform allows you to manage domains, users, and groups in your Google Workspace.
+Community-maintained Terraform provider for Google Workspace: users, groups (static and dynamic), org units, domains, roles, custom schemas, Gmail send-as aliases, and Chrome policy.
 
-This provider is a technical preview, which means it's a community supported project. It still requires extensive testing and polishing to mature into a HashiCorp officially supported project. Please [file issues](https://github.com/hashicorp/terraform-provider-googleworkspace/issues/new/choose) generously and detail your experience while using the provider. We welcome your feedback.
+Maintained under the [Mac Admins Open Source](https://github.com/macadmins) organization. It continues the [HashiCorp provider](https://github.com/hashicorp/terraform-provider-googleworkspace) (archived upstream) by way of the [`vdesouza`](https://github.com/vdesouza/terraform-provider-googleworkspace) fork, whose full history and release line (1.0.0 to 1.4.0) live in this repository.
 
-## Experimental Status
+## Using the provider
 
-By using the software in this repository (the "Software"), you acknowledge that: (1) the Software is still in development, may change, and has not been released as a commercial product by HashiCorp and is not currently supported in any way by HashiCorp; (2) the Software is provided on an "as-is" basis, and may include bugs, errors, or other issues; (3) the Software is NOT INTENDED FOR PRODUCTION USE, use of the Software may result in unexpected results, loss of data, or other unexpected results, and HashiCorp disclaims any and all liability resulting from use of the Software; and (4) HashiCorp reserves all rights to make all decisions about the features, functionality and commercial release (or non-release) of the Software, at any time and without any obligation or liability whatsoever.
+```hcl
+terraform {
+  required_providers {
+    googleworkspace = {
+      source  = "macadmins/googleworkspace"
+      version = ">= 1.5.0"
+    }
+  }
+}
 
-## Maintainers
+provider "googleworkspace" {
+  credentials             = "/path/to/service-account-key.json"
+  customer_id             = "A01b123xz"
+  impersonated_user_email = "admin@example.com"
+}
+```
 
-This provider plugin is maintained by the Terraform team at [HashiCorp](https://www.hashicorp.com/)
+Full provider documentation, including authentication and OAuth scope setup, is on the [Terraform Registry](https://registry.terraform.io/providers/macadmins/googleworkspace/latest/docs).
 
-## Requirements
+### Migrating from `vdesouza/googleworkspace` or `hashicorp/googleworkspace`
 
--	[Terraform](https://www.terraform.io/downloads.html) >= 0.13.x
--	[Go](https://golang.org/doc/install) >= 1.16
+The provider binary is unchanged; only its registry address moved. Update `source` in `required_providers`, then point existing state at the new address:
 
-## Upgrading the provider
+```sh
+terraform state replace-provider registry.terraform.io/vdesouza/googleworkspace registry.terraform.io/macadmins/googleworkspace
+# or, from the archived upstream:
+terraform state replace-provider registry.terraform.io/hashicorp/googleworkspace registry.terraform.io/macadmins/googleworkspace
 
-The Google Workspace provider doesn't upgrade automatically once you've started using it. After a new release you can run
-
-```bash
 terraform init -upgrade
 ```
 
-to upgrade to the latest stable version of the Google Workspace provider. See the [Terraform website](https://www.terraform.io/docs/configuration/providers.html#provider-versions)
-for more information on provider upgrades, and how to set version constraints on your provider.
+Note `hashicorp/googleworkspace` stopped at 0.7.0; review [CHANGELOG.md](CHANGELOG.md) for the changes between 0.7.0 and the current release before upgrading from it.
 
-## Building The Provider
+## Project Status
 
-1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command or `make build`:
-```sh
-$ make build
-```
+Actively maintained. The most exercised areas are Dynamic Groups, Chrome Policy resources, and the companion modules below. Other resources were inherited from upstream and have had less recent attention; test changes in a non-production Google Workspace tenant first.
 
-## Adding Dependencies
+See [CHANGELOG.md](CHANGELOG.md) for release-by-release notes.
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
+## Requirements
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
+- Terraform >= 1.4
+- Go >= 1.24 (for development)
+- Access to a Google Workspace environment
 
-```
-go get github.com/author/dependency
-go mod tidy
-```
-
-Then commit the changes to `go.mod` and `go.sum`.
-
-## Using The provider
-
-See the [Google Workspace Provider documentation](https://registry.terraform.io/providers/hashicorp/googleworkspace/latest/docs) to get started using the
-Google Workspace provider.
-
-## Developing the Provider
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
-You can use [goenv](https://github.com/syndbg/goenv) to manage your Go version.
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-To generate or update documentation, run `go generate`.
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
+## Build
 
 ```sh
-$ make testacc
+make build
 ```
 
-For guidance on common development practices such as testing changes, see the [contribution guidelines](https://github.com/hashicorp/terraform-provider-googleworkspace/blob/main/.github/CONTRIBUTING.md).
-If you have other development questions we don't cover, please file an issue!
+## Test
 
-## Special Recognition
+```sh
+make test      # unit tests
+make testacc   # acceptance tests; require Google Workspace credentials and env vars
+```
 
-* [Chase](https://github.com/DeviaVir) - for the excellent work creating the `DeviaVir/terraform-provider-gsuite` provider, the inspiration for this project.
+## Generate Documentation
 
-## General Feedback
-* How can we best support you ? - [feedback](https://forms.gle/XeqgPiFTtdevcRiu8)
+```sh
+make generate
+```
+
+Files under `docs/` are generated. Edit resource schemas and `examples/`, then run `make generate`.
+
+## Companion Modules
+
+This repository also ships YAML-driven Terraform modules that compose provider resources into higher-level Chrome management workflows. They live under [`modules/`](modules/) and are consumed via a Git source pinned to a release tag:
+
+```hcl
+module "chrome_policies" {
+  source = "git::https://github.com/macadmins/terraform-provider-googleworkspace.git//modules/policies?ref=v1.5.0"
+  # ...
+}
+```
+
+| Module | Purpose |
+| --- | --- |
+| [`variables`](modules/variables/) | Centralized YAML variable substitution for the other modules. |
+| [`groups`](modules/groups/) | Static and dynamic Google Workspace groups from YAML. |
+| [`assets`](modules/assets/) | File uploads to Chrome Policy storage (wallpapers, avatars, ToS). |
+| [`policies`](modules/policies/) | Chrome policies for groups and OUs, with asset reference resolution. |
+| [`extensions`](modules/extensions/) | A variation on `policies` for Chrome extensions, Android apps, and web apps deployed to groups or OUs. |
+| [`group_priority`](modules/group_priority/) | Resolves ordering when multiple groups assign overlapping policies/extensions. |
+
+See [`modules/README.md`](modules/README.md) for the dependency graph and reference configurations.
+
+## Releasing
+
+Releases are cut by pushing a `v*` tag. GitHub Actions runs GoReleaser, signs the checksums with the organization's GPG key, and publishes a GitHub Release, which the Terraform Registry ingests automatically.
+
+## Contributing
+
+Contributions and bug reports are welcome; see [CONTRIBUTING.md](.github/CONTRIBUTING.md).
+
+## License
+
+[Mozilla Public License 2.0](LICENSE).

@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -33,9 +30,9 @@ func TestAccDataSourcePrivileges_basic(t *testing.T) {
 }
 
 func testAccDataSourcePrivileges() string {
-	return fmt.Sprintf(`
+	return `
 data "googleworkspace_privileges" "test" {}
-`)
+`
 }
 
 func testAccResourcePrivilegesCount(resource, attr string) resource.TestCheckFunc {

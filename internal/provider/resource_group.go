@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -14,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	directory "google.golang.org/api/admin/directory/v1"
+	"google.golang.org/api/cloudidentity/v1"
 	"google.golang.org/api/googleapi"
 )
 
@@ -96,6 +94,14 @@ func resourceGroup() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+			},
+			"security_group": {
+				Description: "If true, adds the cloudidentity.googleapis.com/groups.security label to the group via the Cloud Identity API. " +
+					"This is an immutable change - once added, the security label cannot be removed. " +
+					"Requires the cloud-identity.groups OAuth scope.",
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
 			},
 		},
 	}
@@ -193,7 +199,24 @@ func resourceGroupCreate(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("[DEBUG] Finished creating Group %q: %#v", d.Id(), email)
 
-	return resourceGroupRead(ctx, d, meta)
+	// Handle security label if requested
+	if d.Get("security_group").(bool) {
+		log.Printf("[DEBUG] Adding security label to Group %q", d.Id())
+		if err := addSecurityLabelToGroup(ctx, client, group.Email); err != nil {
+			// Log the error but continue to read the actual state
+			log.Printf("[WARN] Failed to add security label to group %s: %v", group.Email, err)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  "Failed to add security label to group",
+				Detail:   fmt.Sprintf("Group was created successfully but failed to add security label: %v. The state will reflect the actual label status.", err),
+			})
+		}
+	}
+
+	// Always read to ensure state matches reality, especially for security label
+	readDiags := resourceGroupRead(ctx, d, meta)
+	diags = append(diags, readDiags...)
+	return diags
 }
 
 func resourceGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -225,6 +248,24 @@ func resourceGroupRead(ctx context.Context, d *schema.ResourceData, meta interfa
 	d.Set("aliases", group.Aliases)
 	d.Set("non_editable_aliases", group.NonEditableAliases)
 	d.Set("etag", group.Etag)
+
+	// Always check if the group has a security label via Cloud Identity API
+	// This ensures the state always reflects reality
+	hasSecurityLabel, err := checkSecurityLabel(ctx, client, group.Email)
+	if err != nil {
+		log.Printf("[WARN] Failed to check security label for group %s: %v", group.Email, err)
+		// Add a warning diagnostic but don't fail the read
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "Unable to verify security label status",
+			Detail:   fmt.Sprintf("Could not verify if group has security label via Cloud Identity API: %v. The security_group attribute may not reflect the current state.", err),
+		})
+		// Keep the current state value if we can't verify
+	} else {
+		// Always update the state to match reality
+		d.Set("security_group", hasSecurityLabel)
+		log.Printf("[DEBUG] Group %s security label status: %v", group.Email, hasSecurityLabel)
+	}
 
 	d.SetId(group.Id)
 
@@ -347,7 +388,40 @@ func resourceGroupUpdate(ctx context.Context, d *schema.ResourceData, meta inter
 
 	log.Printf("[DEBUG] Finished creating Group %q: %#v", d.Id(), email)
 
-	return resourceGroupRead(ctx, d, meta)
+	// Handle security label changes
+	if d.HasChange("security_group") {
+		old, new := d.GetChange("security_group")
+		oldValue := old.(bool)
+		newValue := new.(bool)
+
+		// Prevent removing the security label (it's immutable)
+		if oldValue && !newValue {
+			return append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Cannot remove security label from group",
+				Detail:   "The security label is immutable and cannot be removed once added. You can only change it from false to true.",
+			})
+		}
+
+		// Add the security label if changed from false to true
+		if !oldValue && newValue {
+			log.Printf("[DEBUG] Adding security label to Group %q", d.Id())
+			if err := addSecurityLabelToGroup(ctx, client, email); err != nil {
+				// Log the error but continue to read the actual state
+				log.Printf("[WARN] Failed to add security label to group %s: %v", email, err)
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "Failed to add security label to group",
+					Detail:   fmt.Sprintf("Group was updated successfully but failed to add security label: %v. The state will reflect the actual label status.", err),
+				})
+			}
+		}
+	}
+
+	// Always read to ensure state matches reality, especially for security label
+	readDiags := resourceGroupRead(ctx, d, meta)
+	diags = append(diags, readDiags...)
+	return diags
 }
 
 func resourceGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -377,4 +451,112 @@ func resourceGroupDelete(ctx context.Context, d *schema.ResourceData, meta inter
 	log.Printf("[DEBUG] Finished deleting Group %q: %#v", d.Id(), email)
 
 	return diags
+}
+
+// addSecurityLabelToGroup adds the security label to a group using the Cloud Identity API
+func addSecurityLabelToGroup(ctx context.Context, client *apiClient, groupEmail string) error {
+	cloudIdentityService, diags := client.NewCloudIdentityService()
+	if diags.HasError() {
+		return fmt.Errorf("failed to create Cloud Identity service: %v", diags)
+	}
+
+	groupsService, diags := GetCloudIdentityGroupsService(cloudIdentityService)
+	if diags.HasError() {
+		return fmt.Errorf("failed to get Cloud Identity groups service: %v", diags)
+	}
+
+	// Use the lookup API to find the group by its email address
+	// This is more reliable than search and is the recommended approach
+	lookupResp, err := groupsService.Lookup().
+		GroupKeyId(groupEmail).
+		Do()
+	if err != nil {
+		return fmt.Errorf("failed to lookup group: %v", err)
+	}
+
+	if lookupResp.Name == "" {
+		return fmt.Errorf("group not found in Cloud Identity")
+	}
+
+	// Get the full group details to check and update labels
+	group, err := groupsService.Get(lookupResp.Name).Do()
+	if err != nil {
+		return fmt.Errorf("failed to get group details: %v", err)
+	}
+
+	// Check if the security label already exists
+	if group.Labels != nil {
+		if _, exists := group.Labels["cloudidentity.googleapis.com/groups.security"]; exists {
+			log.Printf("[DEBUG] Security label already exists on group %s", groupEmail)
+			return nil
+		}
+	}
+
+	// Add the security label - create a new group object with only the labels field
+	// to avoid sending read-only fields that the API will reject
+	updatedLabels := make(map[string]string)
+	// Copy existing labels
+	if group.Labels != nil {
+		for k, v := range group.Labels {
+			updatedLabels[k] = v
+		}
+	}
+	// Add the security label
+	updatedLabels["cloudidentity.googleapis.com/groups.security"] = ""
+
+	// Create a minimal group object with only the labels field
+	updateGroup := &cloudidentity.Group{
+		Labels: updatedLabels,
+	}
+
+	// Update the group with the new label
+	updateMask := "labels"
+	_, err = groupsService.Patch(group.Name, updateGroup).UpdateMask(updateMask).Do()
+	if err != nil {
+		return fmt.Errorf("failed to add security label: %v", err)
+	}
+
+	log.Printf("[DEBUG] Successfully added security label to group %s", groupEmail)
+	return nil
+}
+
+// checkSecurityLabel checks if a group has the security label via the Cloud Identity API
+func checkSecurityLabel(ctx context.Context, client *apiClient, groupEmail string) (bool, error) {
+	cloudIdentityService, diags := client.NewCloudIdentityService()
+	if diags.HasError() {
+		return false, fmt.Errorf("failed to create Cloud Identity service: %v", diags)
+	}
+
+	groupsService, diags := GetCloudIdentityGroupsService(cloudIdentityService)
+	if diags.HasError() {
+		return false, fmt.Errorf("failed to get Cloud Identity groups service: %v", diags)
+	}
+
+	// Use the lookup API to find the group by its email address
+	// This is more reliable than search and is the recommended approach
+	lookupResp, err := groupsService.Lookup().
+		GroupKeyId(groupEmail).
+		Do()
+	if err != nil {
+		return false, fmt.Errorf("failed to lookup group: %v", err)
+	}
+
+	if lookupResp.Name == "" {
+		return false, fmt.Errorf("group not found in Cloud Identity")
+	}
+
+	// Get the full group details to check labels
+	group, err := groupsService.Get(lookupResp.Name).Do()
+	if err != nil {
+		return false, fmt.Errorf("failed to get group details: %v", err)
+	}
+
+	// Check if the security label exists
+	if group.Labels != nil {
+		if _, exists := group.Labels["cloudidentity.googleapis.com/groups.security"]; exists {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

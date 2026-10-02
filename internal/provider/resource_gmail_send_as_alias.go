@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package googleworkspace
 
 import (
@@ -100,6 +97,7 @@ func resourceGmailSendAsAlias() *schema.Resource {
 							Description:  "The username that will be used for authentication with the SMTP service. This is a write-only field that can be specified in requests to create or update SendAs settings; it is never populated in responses.",
 							Type:         schema.TypeString,
 							Optional:     true,
+							Sensitive:    true,
 							RequiredWith: []string{"smtp_msa.0.password"},
 						},
 						"password": {
@@ -275,7 +273,7 @@ func resourceGmailSendAsAliasDelete(ctx context.Context, d *schema.ResourceData,
 func resourceGmailSendAsAliasImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	idParts := strings.Split(d.Id(), sendAsIdSeparator)
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		return nil, fmt.Errorf("Unexpected format of ID (%q), expected primary-email%ssend-as-email", d.Id(), sendAsIdSeparator)
+		return nil, fmt.Errorf("unexpected format of ID (%q), expected primary-email%ssend-as-email", d.Id(), sendAsIdSeparator)
 	}
 	d.Set("primary_email", idParts[0])
 	d.Set("send_as_email", idParts[1])
