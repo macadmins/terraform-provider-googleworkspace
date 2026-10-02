@@ -100,7 +100,13 @@ See [`modules/README.md`](modules/README.md) for the dependency graph and refere
 
 ## Releasing
 
-Releases are cut by pushing a `v*` tag. GitHub Actions runs GoReleaser, signs the checksums with the organization's GPG key, and publishes a GitHub Release, which the Terraform Registry ingests automatically.
+Releases are started from `main` by a maintainer: date the version's entry in `CHANGELOG.md`, merge that, then run the **release** workflow with the version as input:
+
+```sh
+gh workflow run release.yml -f version=v1.5.0
+```
+
+The run pauses in the `release` environment until a listed reviewer approves it. The job then creates the tag, builds every platform with GoReleaser, signs the checksums with the organization's GPG key, and publishes a GitHub Release, which the Terraform Registry ingests automatically. Pushing a tag by hand does not start a build.
 
 ## Contributing
 
